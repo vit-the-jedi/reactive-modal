@@ -1,0 +1,17 @@
+{
+  "name": "in-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite serve ./linkOutModal",
+    "build": "vite build"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "vite": "^5.2.9",
+    "vite-cli": "^1.0.0"
+  }
+}
