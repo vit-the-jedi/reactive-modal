@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "vite serve ./linkOutModal",
-    "build": "vite build"
+    "build": "vite build ./linkOutModal",
+    "preview": "vite serve ./linkOutModal/dist/"
   },
   "author": "",
   "license": "ISC",
