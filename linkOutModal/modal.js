@@ -5,7 +5,7 @@ import { transpileToHTML } from "./utils.js";
 
 export const modal = reactive({
   open: false,
-  clickAction: "Close X",
+  clickAction: "X",
   modalTarget: document.querySelector("#modalTarget"),
   properties: {},
   focusedElement: null,
@@ -41,7 +41,7 @@ export const modal = reactive({
             transform: translateX(100%);
           }
           100% {
-            transform: translate(0%);
+            transform: translateX(0%);
             position: relative;
           }
         }
@@ -51,8 +51,26 @@ export const modal = reactive({
             position: relative;
           }
           100% {
-            transform: translate(105%);
+            transform: translateX(105%);
             position: absolute;
+          }
+        }
+        @keyframes slideUp {
+          0% {
+            transform: translateY(100%);
+          }
+          100% {
+            transform: translateY(0%);
+            position: relative;
+          }
+        }
+        @keyframes slideDown{
+          0% {
+            transform: translateY(0%);
+          }
+          100% {
+            transform: translateY(100%);
+            position: relative;
           }
         }
         body:has(.dialog.open) {
@@ -71,7 +89,10 @@ export const modal = reactive({
         }
         #${this.modalTarget.id}:has(.dialog.open)  {
           z-index: 999;
-          background-color: rgba(0, 0, 0, 0.35);
+          background-color: rgba(0, 0, 0, 0.5);
+        }
+        #${this.modalTarget.id}:has(.dialog.open) .button-container {
+          display: block;
         }
         .dialog {
           opacity: 0;
@@ -83,7 +104,7 @@ export const modal = reactive({
           border-radius: 5px;
           padding: 20px;
           width: 90%;
-          right: -4%;
+          right: -8%;
           height: 100%;
           transition: opacity ease-in-out 0.25s;
           background: #ffffff;
@@ -100,19 +121,31 @@ export const modal = reactive({
           overflow-y: scroll;
           transform: translateX(0%);
         }
-        .dialog .button-container {
-          top:0;
-          left: 0;
-          right: 0;
-          width: 100%;
-          background: #ffffff;
+        .button-container {
+          top:10px;
+          left: 30px;
+          border-radius: 50px;
+          background: #e6e6e6;
+          width: 30px;
+          height: 30px;
           padding: 10px;
-          position: fixed;
-        }
-        .dialog .bottom-button {
-          bottom: 0;
-          right: 0;
           position: absolute;
+          display: none;
+          text-align: center;
+
+        }
+        .button-container button {
+          border: none;
+          background-color: transparent;
+          position: relative;
+          width: 100%;
+          height: 100%;
+          font-size: 1.25em;
+          cursor: pointer;
+        }
+        .modal-button {
+          border: none;
+          background: none;
         }
         .dialog .inner {
           width: 90%;
@@ -128,6 +161,28 @@ export const modal = reactive({
           min-height: 100vh;
           display:inline-block;
         }
+        @media screen and (max-width: 767px){
+          .dialog {
+            right: 0;
+            left: 0;
+            width: 100%;
+            animation: slideDown 0.5s;
+            transform: translateY(100%);
+          }
+          .dialog.open {
+            height: 80vh;
+            min-height: 80vh;
+            margin-top: 15%;
+            bottom: 0;
+            top: unset;
+            animation: slideUp 0.5s;
+            transform: translateY(0%);
+            transform: translateX(0%);
+          }
+          #${this.modalTarget.id}:has(.dialog.open) .button-container {
+            left: calc(50% - 30px);
+          }
+        }
       `;
   },
   registerKeyEvents() {},
@@ -141,22 +196,23 @@ export const modal = reactive({
 
     this.registerKeyEvents();
 
+    modal.innerHTML = `<style>${this.styles}</style>
+    <div class="inner">
+        <div id="content-output">
+        </div>
+    </div>`;
+    return modal;
+  },
+  createModalButton() {
     //method we want the buttons to run when clicked, passed as string name
     const modalButtonAction = "handleVisibility";
-
-    const transpiled = transpileToHTML(`<style>${this.styles}</style>
-      <div class="inner">
-        <div class="button-container">
-          <button id="closeModalTop" class="top-button" @click:id(closeModalTop)=${modalButtonAction}>${this.clickAction}</button>
-        </div>
-          <div id="content-output">
-            <div style="height:6000px;"></div>
-          </div>
-      </div>`);
-
-    modal.innerHTML = transpiled[0];
-    this.events = transpiled[1];
-    return modal;
+    const transpiledButton = transpileToHTML(`  
+    <button id="closeModalTop" class="top-button" @click:id(closeModalTop)=${modalButtonAction}>${this.clickAction}</button> `);
+    this.events = transpiledButton[1];
+    const buttonContainer = document.createElement("div");
+    buttonContainer.className = "button-container";
+    buttonContainer.innerHTML = transpiledButton[0];
+    return buttonContainer;
   },
   createModalContent() {
     let content = "";
@@ -181,7 +237,7 @@ export const modal = reactive({
   preprocessModal() {
     //add event listeners to modal based on events we extracted from the transpiled html template
     this.events.forEach((event) => {
-      this.modal
+      document
         .querySelector(`${event.get("elementDomIdPrefix")}${event.get("elementDomIdValue")}`)
         .addEventListener(event.get("eventType"), this[event.get("eventListenerCallback")].bind(this));
     });
@@ -205,6 +261,7 @@ export const modal = reactive({
     //create the inital modal, which is hidden and has no content
     this.modal = this.createModal();
     //append the processed modal to the DOM target
+    this.modalTarget.appendChild(this.createModalButton());
     this.modalTarget.appendChild(this.preprocessModal());
   },
 });

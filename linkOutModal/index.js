@@ -40,7 +40,7 @@ if (uaDetector.detect("fb")) {
     const contentKey = event.target.dataset.modalCategory !== "partners" ? "content" : "vertical";
     const { [contentKey]: content, type } = linkCategories[event.target.dataset.modalCategory];
 
-    modal.properties = { brand: "medicaredeluxe", [contentKey]: content, type: type };
+    modal.properties = { brand: modal.modalTarget.getAttribute("brand"), [contentKey]: content, type: type };
     //invoking getter for other reactive property
     modal.open = !modal.open;
   };
