@@ -1,9 +1,126 @@
-"use strict";
-
-import { reactive } from "https://vit-the-jedi.github.io/lightweight-reactivity/src/index.js";
-import { transpileToHTML } from "./utils.js";
-
-export const modal = reactive({
+(function polyfill() {
+  const relList = document.createElement("link").relList;
+  if (relList && relList.supports && relList.supports("modulepreload")) {
+    return;
+  }
+  for (const link of document.querySelectorAll('link[rel="modulepreload"]')) {
+    processPreload(link);
+  }
+  new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.type !== "childList") {
+        continue;
+      }
+      for (const node of mutation.addedNodes) {
+        if (node.tagName === "LINK" && node.rel === "modulepreload")
+          processPreload(node);
+      }
+    }
+  }).observe(document, { childList: true, subtree: true });
+  function getFetchOpts(link) {
+    const fetchOpts = {};
+    if (link.integrity)
+      fetchOpts.integrity = link.integrity;
+    if (link.referrerPolicy)
+      fetchOpts.referrerPolicy = link.referrerPolicy;
+    if (link.crossOrigin === "use-credentials")
+      fetchOpts.credentials = "include";
+    else if (link.crossOrigin === "anonymous")
+      fetchOpts.credentials = "omit";
+    else
+      fetchOpts.credentials = "same-origin";
+    return fetchOpts;
+  }
+  function processPreload(link) {
+    if (link.ep)
+      return;
+    link.ep = true;
+    const fetchOpts = getFetchOpts(link);
+    fetch(link.href, fetchOpts);
+  }
+})();
+class UserAgentDetector {
+  constructor(userAgent) {
+    this.userAgent = userAgent;
+  }
+  detect(appName = "fb") {
+    switch (appName) {
+      case "fb":
+        return this.isFacebookInAppBrowser();
+      default:
+        return false;
+    }
+  }
+  isFacebookInAppBrowser() {
+    const fbInAppBrowserRegex = /FBAN|FBAV|FBIOS|FBOP|FBDV|FBSV|FBSS|FBCR|FBID|FBLC|FBOP|FB_IAB/;
+    return fbInAppBrowserRegex.test(this.userAgent);
+  }
+}
+const targetMap = /* @__PURE__ */ new WeakMap();
+function reactive(target, effect) {
+  const handler = {
+    get(target2, key, reciever) {
+      let result = Reflect.get(target2, key, reciever);
+      track(target2, key);
+      return result;
+    },
+    set(target2, key, value, reciever) {
+      let oldValue = target2[key];
+      let result = Reflect.set(target2, key, value, reciever);
+      if (result && oldValue !== value) {
+        trigger(target2, key);
+      }
+      return result;
+    }
+  };
+  return new Proxy(target, handler);
+}
+function track(target, key) {
+  let depsMap = targetMap.get(target);
+  if (!depsMap) {
+    targetMap.set(target, depsMap = /* @__PURE__ */ new Map());
+  }
+  let dep = depsMap.get(key);
+  if (!dep) {
+    depsMap.set(key, dep = /* @__PURE__ */ new Map());
+  }
+  if (target.effects) {
+    const effects = Object.entries(target.effects());
+    effects.forEach((effect) => {
+      if (effect[0] === key) {
+        dep.set(key, effect[1]);
+      }
+    });
+  }
+}
+function trigger(target, key) {
+  const depsMap = targetMap.get(target);
+  if (!depsMap) {
+    return;
+  }
+  let dep = depsMap.get(key);
+  if (dep) {
+    dep.forEach((effectName) => {
+      Object.values(effectName).forEach((effectFn) => {
+        effectFn();
+      });
+    });
+  }
+}
+function transpileToHTML(string) {
+  let events = [];
+  const r = new RegExp(/@(\w+):(\w+)\((\w+)\)=(\w+)/g);
+  string.match(r).forEach((match) => {
+    const eventsMap = /* @__PURE__ */ new Map();
+    eventsMap.set("eventType", match.split("@")[1].split(":")[0]);
+    eventsMap.set("elementDomIdPrefix", match.split(":")[1].split("(")[0] === "id" ? "#" : ".");
+    eventsMap.set("elementDomIdValue", match.split("(")[1].split(")")[0]);
+    eventsMap.set("eventListenerCallback", match.split("=")[1]);
+    events.push(eventsMap);
+  });
+  return [string.replace(/@(\w+):(\w+)\((\w+)\)=(\w+)/g, ""), events];
+}
+const modal = reactive({
   open: false,
   clickAction: "X",
   modalTarget: document.querySelector("#modalTarget"),
@@ -15,23 +132,21 @@ export const modal = reactive({
       open: {
         toggleVisibility: () => {
           this.modal.classList.toggle("open");
-
-          //return focus to the element that triggered the modal after the modal closes
           if (this.open === false && this.focusedElement) {
             this.focusedElement.focus();
           }
         },
         trackFocusedElement: () => {
           this.focusedElement = document.activeElement;
-        },
+        }
       },
       properties: {
         updateContent: () => {
           console.log(this.properties);
           this.createModalContent();
           this.injectScript();
-        },
-      },
+        }
+      }
     };
   },
   get styles() {
@@ -185,26 +300,24 @@ export const modal = reactive({
         }
       `;
   },
-  registerKeyEvents() {},
+  registerKeyEvents() {
+  },
   handleVisibility() {
     this.open = !this.open;
   },
   createModal() {
-    const modal = document.createElement("div");
-    modal.id = `in-app-modal`;
-    modal.className = "dialog";
-
+    const modal2 = document.createElement("div");
+    modal2.id = `in-app-modal`;
+    modal2.className = "dialog";
     this.registerKeyEvents();
-
-    modal.innerHTML = `<style>${this.styles}</style>
+    modal2.innerHTML = `<style>${this.styles}</style>
     <div class="inner">
         <div id="content-output">
         </div>
     </div>`;
-    return modal;
+    return modal2;
   },
   createModalButton() {
-    //method we want the buttons to run when clicked, passed as string name
     const modalButtonAction = "handleVisibility";
     const transpiledButton = transpileToHTML(`  
     <button id="closeModalTop" class="top-button" @click:id(closeModalTop)=${modalButtonAction}>${this.clickAction}</button> `);
@@ -235,16 +348,12 @@ export const modal = reactive({
     this.modal.setAttribute("data-modal-type", this.properties.type);
   },
   preprocessModal() {
-    //add event listeners to modal based on events we extracted from the transpiled html template
     this.events.forEach((event) => {
-      document
-        .querySelector(`${event.get("elementDomIdPrefix")}${event.get("elementDomIdValue")}`)
-        .addEventListener(event.get("eventType"), this[event.get("eventListenerCallback")].bind(this));
+      document.querySelector(`${event.get("elementDomIdPrefix")}${event.get("elementDomIdValue")}`).addEventListener(event.get("eventType"), this[event.get("eventListenerCallback")].bind(this));
     });
     return this.modal;
   },
   injectScript() {
-    //inject the proper script for the modal
     const scriptExists = document.querySelector(`script[src="${this.script}"]`);
     if (scriptExists) {
       scriptExists.remove();
@@ -258,10 +367,50 @@ export const modal = reactive({
     this.scripts[this.properties.type] = injScript;
   },
   init() {
-    //create the inital modal, which is hidden and has no content
     this.modal = this.createModal();
-    //append the processed modal to the DOM target
     this.modalTarget.appendChild(this.createModalButton());
     this.modalTarget.appendChild(this.preprocessModal());
-  },
+  }
 });
+Object.defineProperty(window.navigator, "userAgent", {
+  value: "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/43.0.2357.121 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/35.0.0.48.273;]",
+  writable: true
+});
+const uaDetector = new UserAgentDetector(window.navigator.userAgent);
+if (uaDetector.detect("fb")) {
+  modal.init();
+  const linkCategories = {
+    privacy: { content: "privacy-policy", type: "terms-privacy" },
+    terms: { content: "terms", type: "terms-privacy" },
+    partners: { vertical: "medicare-oo", type: "partners" },
+    notice: { content: "privacy-notice", type: "terms-privacy" }
+  };
+  const getCategory = (href) => {
+    const blacklistedLinkParts = ["notice", "privacy", "terms", "partners"];
+    for (const part of blacklistedLinkParts) {
+      if (href.includes(part)) {
+        return part;
+      }
+    }
+    return null;
+  };
+  const handleLinkClick = (event) => {
+    event.preventDefault();
+    modal.properties = modal.properties || {};
+    const contentKey = event.target.dataset.modalCategory !== "partners" ? "content" : "vertical";
+    const { [contentKey]: content, type } = linkCategories[event.target.dataset.modalCategory];
+    modal.properties = { brand: modal.modalTarget.getAttribute("brand"), [contentKey]: content, type };
+    modal.open = !modal.open;
+  };
+  [...document.querySelectorAll("a")].filter((anchor) => {
+    const category = getCategory(anchor.href);
+    if (category) {
+      anchor.dataset.modalCategory = category;
+      anchor.href = "javascript:void(0)";
+      return true;
+    }
+    return false;
+  }).forEach((tag) => {
+    tag.addEventListener("click", handleLinkClick);
+  });
+}

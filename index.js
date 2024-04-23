@@ -1,7 +1,7 @@
 "use strict";
 
 //import { modal } from "./modal.js";
-import { UserAgentDetector } from "../isInApp/detect.js";
+import { UserAgentDetector } from "./isInApp/detect.js";
 import { modal } from "./modal.js";
 
 Object.defineProperty(window.navigator, "userAgent", {
