@@ -304,14 +304,14 @@ const modal = reactive({
             height: 45px;
             top: calc(15vh / 2);
           }
-          .dialog h1 {
-            font-size: 1.5em;
+          .dialog #content-output h1 {
+            font-size: 2.5em;
           }
-          .dialog h2 {
-            font-size: 1.25em;
+          .dialog #content-output h2 {
+            font-size: 1.8em;
           }
-          .dialog h3 {
-            font-size: 1.1em;
+          .dialog #content-output h3 {
+            font-size: 1.35em;
           }
         }
       `;
@@ -387,10 +387,6 @@ const modal = reactive({
     this.modalTarget.appendChild(this.createModalButton());
     this.modalTarget.appendChild(this.preprocessModal());
   }
-});
-Object.defineProperty(window.navigator, "userAgent", {
-  value: "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/43.0.2357.121 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/35.0.0.48.273;]",
-  writable: true
 });
 const uaDetector = new UserAgentDetector(window.navigator.userAgent);
 if (uaDetector.detect("fb")) {
