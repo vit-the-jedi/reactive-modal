@@ -243,7 +243,6 @@ const modal = reactive({
           background: #e6e6e6;
           width: 30px;
           height: 30px;
-          padding: 10px;
           position: absolute;
           display: none;
           text-align: center;
@@ -255,6 +254,7 @@ const modal = reactive({
           position: relative;
           width: 100%;
           height: 100%;
+          font-weight: bold;
           font-size: 1.25em;
           cursor: pointer;
         }
@@ -270,11 +270,15 @@ const modal = reactive({
           position: relative;
         }
         .dialog .inner #content-output {
+          width: 100%;
           display: flex;
           flex-direction: column;
           justify-content: flex-start;
           min-height: 100vh;
           display:inline-block;
+        }
+        .dialog .inner p, .dialog .inner span, .dialog .inner td {
+          text-align: left;
         }
         @media screen and (max-width: 767px){
           .dialog {
@@ -285,9 +289,9 @@ const modal = reactive({
             transform: translateY(100%);
           }
           .dialog.open {
-            height: 80vh;
-            min-height: 80vh;
-            margin-top: 15%;
+            height: 85vh;
+            min-height: 85vh;
+            margin-top: 15vh;
             bottom: 0;
             top: unset;
             animation: slideUp 0.5s;
@@ -296,6 +300,18 @@ const modal = reactive({
           }
           #${this.modalTarget.id}:has(.dialog.open) .button-container {
             left: calc(50% - 30px);
+            width: 45px;
+            height: 45px;
+            top: calc(15vh / 2);
+          }
+          .dialog h1 {
+            font-size: 1.5em;
+          }
+          .dialog h2 {
+            font-size: 1.25em;
+          }
+          .dialog h3 {
+            font-size: 1.1em;
           }
         }
       `;
