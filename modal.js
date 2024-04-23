@@ -189,14 +189,14 @@ export const modal = reactive({
             height: 45px;
             top: calc(15vh / 2);
           }
-          .dialog h1 {
-            font-size: 1.5em;
+          .dialog #content-output h1 {
+            font-size: 2.5em;
           }
-          .dialog h2 {
-            font-size: 1.25em;
+          .dialog #content-output h2 {
+            font-size: 1.8em;
           }
-          .dialog h3 {
-            font-size: 1.1em;
+          .dialog #content-output h3 {
+            font-size: 1.35em;
           }
         }
       `;
