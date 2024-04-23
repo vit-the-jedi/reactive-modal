@@ -305,13 +305,14 @@ const modal = reactive({
             top: calc(15vh / 2);
           }
           .dialog #content-output h1 {
-            font-size: 2.5em;
+            font-size: 2.5em !important;
+            margin: 15px auto;
           }
           .dialog #content-output h2 {
-            font-size: 1.8em;
+            font-size: 1.8em !important;
           }
           .dialog #content-output h3 {
-            font-size: 1.35em;
+            font-size: 1.35em !important;
           }
         }
       `;
