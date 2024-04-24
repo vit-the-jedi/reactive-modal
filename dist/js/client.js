@@ -416,6 +416,29 @@ if (uaDetector.detect("fb")) {
   modifyLinkTags();
 }
 function modifyLinkTags() {
+  const linkCategories = {
+    privacy: { content: "privacy-policy", type: "terms-privacy" },
+    terms: { content: "terms", type: "terms-privacy" },
+    partners: { vertical: "medicare-oo", type: "partners" },
+    notice: { content: "privacy-notice", type: "terms-privacy" }
+  };
+  const getCategory = (href) => {
+    const blacklistedLinkParts = ["notice", "privacy", "terms", "partners"];
+    for (const part of blacklistedLinkParts) {
+      if (href.includes(part)) {
+        return part;
+      }
+    }
+    return null;
+  };
+  const handleLinkClick = (event) => {
+    event.preventDefault();
+    modal.properties = modal.properties || {};
+    const contentKey = event.target.dataset.modalCategory !== "partners" ? "content" : "vertical";
+    const { [contentKey]: content, type } = linkCategories[event.target.dataset.modalCategory];
+    modal.properties = { brand: modal.modalTarget.getAttribute("brand"), [contentKey]: content, type };
+    modal.open = !modal.open;
+  };
   [...document.querySelectorAll("a")].filter((anchor) => {
     if (anchor.href.includes("javascript")) {
       return false;

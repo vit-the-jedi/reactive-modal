@@ -9,7 +9,10 @@ const uaDetector = new UserAgentDetector(window.navigator.userAgent);
 if (uaDetector.detect("fb")) {
   //initialize modal
   modal.init();
+  modifyLinkTags();
+}
 
+export function modifyLinkTags() {
   const linkCategories = {
     privacy: { content: "privacy-policy", type: "terms-privacy" },
     terms: { content: "terms", type: "terms-privacy" },
@@ -38,10 +41,6 @@ if (uaDetector.detect("fb")) {
     //invoking getter for other reactive property
     modal.open = !modal.open;
   };
-  modifyLinkTags();
-}
-
-export function modifyLinkTags() {
   //go through all links on page and transform the ones we need to
   //only target links that are redirecting to privacy, terms, or partners
   [...document.querySelectorAll("a")]
