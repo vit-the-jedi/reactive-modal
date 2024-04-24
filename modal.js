@@ -285,14 +285,44 @@ export const modal = reactive({
   watchForPageChange() {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.type === "attributes" && mutation.attributeName === "id") {
-          // Call your desired function when the .page id changes
-          this.currentPage = mutation.target.id;
+        if (mutation.type === "childList") {
+          const pageElement = document.querySelector(".survey .page");
+          if (pageElement) {
+            this.waitForReactRenderOfElement("footer").then(() => {
+              this.currentPage = pageElement.id;
+            });
+          }
         }
       });
     });
-    const pageElement = document.querySelector(".page");
-    observer.observe(pageElement, { attributes: true });
+    const surveyElement = document.querySelector(".survey");
+    observer.observe(surveyElement, { childList: true });
+  },
+  waitForReactRenderOfElement(selector) {
+    //polls the DOM either until the element is found or the time limit is reached before throwing an error.
+    //Alter the attempt limit value by multiplying your new attempt value * the interval ms value to get the desired amount of time to poll for.
+    const attemptLimit = 100;
+    return new Promise((resolve, reject) => {
+      let intervalsRun = 0;
+      function checkForElement() {
+        //increase intervalsRun every time the interval is called
+        intervalsRun++;
+        if (intervalsRun === attemptLimit) {
+          reject(
+            new Error(
+              `waitForReactRenderOfElement: Could not find element with selector: "${selector}". Attempt limit reached (${attemptLimit} attempts)`
+            )
+          );
+        }
+        const element = document.querySelector(selector);
+        //clear the interval and resolve the promise with the found element
+        if (element) {
+          clearInterval(intervalId);
+          resolve(element);
+        }
+      }
+      const intervalId = setInterval(checkForElement, 50);
+    });
   },
   init() {
     //create the inital modal, which is hidden and has no content

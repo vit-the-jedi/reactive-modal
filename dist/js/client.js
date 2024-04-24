@@ -394,13 +394,40 @@ const modal = reactive({
   watchForPageChange() {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.type === "attributes" && mutation.attributeName === "id") {
-          this.currentPage = mutation.target.id;
+        if (mutation.type === "childList") {
+          const pageElement = document.querySelector(".survey .page");
+          if (pageElement) {
+            this.waitForReactRenderOfElement("footer").then(() => {
+              this.currentPage = pageElement.id;
+            });
+          }
         }
       });
     });
-    const pageElement = document.querySelector(".page");
-    observer.observe(pageElement, { attributes: true });
+    const surveyElement = document.querySelector(".survey");
+    observer.observe(surveyElement, { childList: true });
+  },
+  waitForReactRenderOfElement(selector) {
+    const attemptLimit = 100;
+    return new Promise((resolve, reject) => {
+      let intervalsRun = 0;
+      function checkForElement() {
+        intervalsRun++;
+        if (intervalsRun === attemptLimit) {
+          reject(
+            new Error(
+              `waitForReactRenderOfElement: Could not find element with selector: "${selector}". Attempt limit reached (${attemptLimit} attempts)`
+            )
+          );
+        }
+        const element = document.querySelector(selector);
+        if (element) {
+          clearInterval(intervalId);
+          resolve(element);
+        }
+      }
+      const intervalId = setInterval(checkForElement, 50);
+    });
   },
   init() {
     this.modal = this.createModal();
