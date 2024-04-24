@@ -38,11 +38,17 @@ if (uaDetector.detect("fb")) {
     //invoking getter for other reactive property
     modal.open = !modal.open;
   };
+  modifyLinkTags();
+}
 
+export function modifyLinkTags() {
   //go through all links on page and transform the ones we need to
   //only target links that are redirecting to privacy, terms, or partners
   [...document.querySelectorAll("a")]
     .filter((anchor) => {
+      if (anchor.href.includes("javascript")) {
+        return false;
+      }
       const category = getCategory(anchor.href);
       if (category) {
         anchor.dataset.modalCategory = category;

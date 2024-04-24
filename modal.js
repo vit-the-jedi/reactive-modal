@@ -2,6 +2,7 @@
 
 import { reactive } from "../lightweight-reactivity/src/index.js";
 import { transpileToHTML } from "./utils.js";
+import { modifyLinkTags } from "./index.js";
 
 export const modal = reactive({
   open: false,
@@ -10,6 +11,7 @@ export const modal = reactive({
   properties: {},
   focusedElement: null,
   scripts: {},
+  currentPage: null, //Impressure only
   effects() {
     return {
       open: {
@@ -30,6 +32,12 @@ export const modal = reactive({
           console.log(this.properties);
           this.createModalContent();
           this.injectScript();
+        },
+      },
+      currentPage: {
+        pageChange: () => {
+          console.log("page changed to: ", this.currentPage);
+          modifyLinkTags();
         },
       },
     };
@@ -274,11 +282,25 @@ export const modal = reactive({
     document.body.appendChild(injScript);
     this.scripts[this.properties.type] = injScript;
   },
+  watchForPageChange() {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === "attributes" && mutation.attributeName === "id") {
+          // Call your desired function when the .page id changes
+          this.currentPage = mutation.target.id;
+        }
+      });
+    });
+    const pageElement = document.querySelector(".page");
+    observer.observe(pageElement, { attributes: true });
+  },
   init() {
     //create the inital modal, which is hidden and has no content
     this.modal = this.createModal();
     //append the processed modal to the DOM target
     this.modalTarget.appendChild(this.createModalButton());
     this.modalTarget.appendChild(this.preprocessModal());
+    this.currentPage = this.currentPage || document.querySelector(".page").id;
+    this.watchForPageChange();
   },
 });

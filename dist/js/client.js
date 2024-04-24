@@ -127,6 +127,8 @@ const modal = reactive({
   properties: {},
   focusedElement: null,
   scripts: {},
+  currentPage: null,
+  //Impressure only
   effects() {
     return {
       open: {
@@ -145,6 +147,12 @@ const modal = reactive({
           console.log(this.properties);
           this.createModalContent();
           this.injectScript();
+        }
+      },
+      currentPage: {
+        pageChange: () => {
+          console.log("page changed to: ", this.currentPage);
+          modifyLinkTags();
         }
       }
     };
@@ -383,39 +391,35 @@ const modal = reactive({
     document.body.appendChild(injScript);
     this.scripts[this.properties.type] = injScript;
   },
+  watchForPageChange() {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === "attributes" && mutation.attributeName === "id") {
+          this.currentPage = mutation.target.id;
+        }
+      });
+    });
+    const pageElement = document.querySelector(".page");
+    observer.observe(pageElement, { attributes: true });
+  },
   init() {
     this.modal = this.createModal();
     this.modalTarget.appendChild(this.createModalButton());
     this.modalTarget.appendChild(this.preprocessModal());
+    this.currentPage = this.currentPage || document.querySelector(".page").id;
+    this.watchForPageChange();
   }
 });
 const uaDetector = new UserAgentDetector(window.navigator.userAgent);
 if (uaDetector.detect("fb")) {
   modal.init();
-  const linkCategories = {
-    privacy: { content: "privacy-policy", type: "terms-privacy" },
-    terms: { content: "terms", type: "terms-privacy" },
-    partners: { vertical: "medicare-oo", type: "partners" },
-    notice: { content: "privacy-notice", type: "terms-privacy" }
-  };
-  const getCategory = (href) => {
-    const blacklistedLinkParts = ["notice", "privacy", "terms", "partners"];
-    for (const part of blacklistedLinkParts) {
-      if (href.includes(part)) {
-        return part;
-      }
-    }
-    return null;
-  };
-  const handleLinkClick = (event) => {
-    event.preventDefault();
-    modal.properties = modal.properties || {};
-    const contentKey = event.target.dataset.modalCategory !== "partners" ? "content" : "vertical";
-    const { [contentKey]: content, type } = linkCategories[event.target.dataset.modalCategory];
-    modal.properties = { brand: modal.modalTarget.getAttribute("brand"), [contentKey]: content, type };
-    modal.open = !modal.open;
-  };
+  modifyLinkTags();
+}
+function modifyLinkTags() {
   [...document.querySelectorAll("a")].filter((anchor) => {
+    if (anchor.href.includes("javascript")) {
+      return false;
+    }
     const category = getCategory(anchor.href);
     if (category) {
       anchor.dataset.modalCategory = category;
