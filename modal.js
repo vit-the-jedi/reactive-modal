@@ -37,9 +37,7 @@ export const modal = reactive({
       currentPage: {
         pageChange: () => {
           console.log("page changed to: ", this.currentPage);
-          this.modal = this.createModal();
-          this.modalTarget.appendChild(this.createModalButton());
-          this.modalTarget.appendChild(this.preprocessModal());
+          this.init();
         },
       },
     };
@@ -333,6 +331,5 @@ export const modal = reactive({
     this.modalTarget.appendChild(this.createModalButton());
     this.modalTarget.appendChild(this.preprocessModal());
     this.currentPage = this.currentPage || "";
-    this.watchForPageChange();
   },
 });

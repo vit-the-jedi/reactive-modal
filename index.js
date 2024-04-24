@@ -7,9 +7,9 @@ import { modal } from "./modal.js";
 const uaDetector = new UserAgentDetector(window.navigator.userAgent);
 
 if (uaDetector.detect("fb")) {
-  //initialize modal
-  modal.init();
+  //initialize links
   modifyLinkTags();
+  modal.watchForPageChange();
 }
 
 export function modifyLinkTags() {

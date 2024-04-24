@@ -152,9 +152,7 @@ const modal = reactive({
       currentPage: {
         pageChange: () => {
           console.log("page changed to: ", this.currentPage);
-          this.modal = this.createModal();
-          this.modalTarget.appendChild(this.createModalButton());
-          this.modalTarget.appendChild(this.preprocessModal());
+          this.init();
         }
       }
     };
@@ -436,13 +434,12 @@ const modal = reactive({
     this.modalTarget.appendChild(this.createModalButton());
     this.modalTarget.appendChild(this.preprocessModal());
     this.currentPage = this.currentPage || "";
-    this.watchForPageChange();
   }
 });
 const uaDetector = new UserAgentDetector(window.navigator.userAgent);
 if (uaDetector.detect("fb")) {
-  modal.init();
   modifyLinkTags();
+  modal.watchForPageChange();
 }
 function modifyLinkTags() {
   const linkCategories = {
