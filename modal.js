@@ -37,7 +37,9 @@ export const modal = reactive({
       currentPage: {
         pageChange: () => {
           console.log("page changed to: ", this.currentPage);
-          this.init();
+          this.modal = this.createModal();
+          this.modalTarget.appendChild(this.createModalButton());
+          this.modalTarget.appendChild(this.preprocessModal());
         },
       },
     };
