@@ -152,7 +152,7 @@ const modal = reactive({
       currentPage: {
         pageChange: () => {
           console.log("page changed to: ", this.currentPage);
-          modifyLinkTags();
+          this.init();
         }
       }
     };
