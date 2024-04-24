@@ -435,7 +435,7 @@ const modal = reactive({
     this.modal = this.createModal();
     this.modalTarget.appendChild(this.createModalButton());
     this.modalTarget.appendChild(this.preprocessModal());
-    this.currentPage = this.currentPage || document.querySelector(".page").id;
+    this.currentPage = this.currentPage || "";
     this.watchForPageChange();
   }
 });

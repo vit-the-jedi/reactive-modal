@@ -332,7 +332,7 @@ export const modal = reactive({
     //append the processed modal to the DOM target
     this.modalTarget.appendChild(this.createModalButton());
     this.modalTarget.appendChild(this.preprocessModal());
-    this.currentPage = this.currentPage || document.querySelector(".page").id;
+    this.currentPage = this.currentPage || "";
     this.watchForPageChange();
   },
 });
