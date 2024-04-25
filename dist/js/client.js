@@ -290,12 +290,15 @@ const modal = reactive({
           border: none;
           background: none;
         }
-        .dialog .inner {
+        .dialog{
           width: 90%;
           margin: auto;
           display: inline-block;
-          background: url('https://impressure-c630.kxcdn.com/loading.c5de814fe527fa434435.gif') no-repeat center center / 20px;
+          background: #fff, url('https://impressure-c630.kxcdn.com/loading.c5de814fe527fa434435.gif') no-repeat center center / 20px;
           position: relative;
+        }
+        .dialog .inner {
+          background: #fff;
         }
         .dialog .inner #content-output {
           width: 100%;
@@ -459,13 +462,13 @@ const watchForPageChange = () => {
   observer.observe(surveyElement, { childList: true });
 };
 if (uaDetector.detect("fb")) {
-  modifyLinkTags();
   waitForReactRenderOfElement("#modalTarget").then((el) => {
     modal.modalTarget;
     modal.modalTarget = el;
     modal.currentPage;
     modal.currentPage = "";
     modal.properties;
+    modifyLinkTags();
     watchForPageChange();
   });
 }

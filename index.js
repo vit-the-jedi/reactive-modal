@@ -79,8 +79,6 @@ const watchForPageChange = () => {
 };
 
 if (uaDetector.detect("fb")) {
-  //initialize links
-  modifyLinkTags();
   //initialize all reactive props here
   waitForReactRenderOfElement("#modalTarget").then((el) => {
     let modalTarget = modal.modalTarget;
@@ -88,7 +86,8 @@ if (uaDetector.detect("fb")) {
     let currentPage = modal.currentPage;
     modal.currentPage = "";
     let modalProps = modal.properties;
-
+    //initialize links
+    modifyLinkTags();
     //set up watcher for navigation
     watchForPageChange();
   });
