@@ -3,14 +3,9 @@
 //import { modal } from "./modal.js";
 import { UserAgentDetector } from "./isInApp/detect.js";
 import { modal } from "./modal.js";
+import { waitForReactRenderOfElement } from "./utils.js";
 
 const uaDetector = new UserAgentDetector(window.navigator.userAgent);
-
-if (uaDetector.detect("fb")) {
-  //initialize links
-  modifyLinkTags();
-  modal.watchForPageChange();
-}
 
 export function modifyLinkTags() {
   const linkCategories = {
@@ -33,12 +28,15 @@ export function modifyLinkTags() {
     event.preventDefault();
     //must invoke the reactive modal's getter on each property we want to be reactive
     //otherwise our reactive function won't track changes
-    modal.properties = modal.properties || {};
     const contentKey = event.target.dataset.modalCategory !== "partners" ? "content" : "vertical";
     const { [contentKey]: content, type } = linkCategories[event.target.dataset.modalCategory];
-
     modal.properties = { brand: modal.modalTarget.getAttribute("brand"), [contentKey]: content, type: type };
-    //invoking getter for other reactive property
+    modal.open = !modal.open;
+    modal.modalTarget.querySelectorAll("button").forEach((button) => {
+      button.addEventListener("click", handleCloseButtonClick);
+    });
+  };
+  const handleCloseButtonClick = () => {
     modal.open = !modal.open;
   };
   //go through all links on page and transform the ones we need to
@@ -59,4 +57,39 @@ export function modifyLinkTags() {
     .forEach((tag) => {
       tag.addEventListener("click", handleLinkClick);
     });
+}
+
+// check when impressure navigation occurs
+const watchForPageChange = () => {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === "childList") {
+        const pageElement = document.querySelector(".survey .page");
+        if (pageElement) {
+          waitForReactRenderOfElement("#modalTarget").then((el) => {
+            modal.modalTarget = el;
+            modal.currentPage = pageElement.id;
+          });
+        }
+      }
+    });
+  });
+  const surveyElement = document.querySelector(".survey");
+  observer.observe(surveyElement, { childList: true });
+};
+
+if (uaDetector.detect("fb")) {
+  //initialize links
+  modifyLinkTags();
+  //initialize all reactive props here
+  waitForReactRenderOfElement("#modalTarget").then((el) => {
+    let modalTarget = modal.modalTarget;
+    modal.modalTarget = el;
+    let currentPage = modal.currentPage;
+    modal.currentPage = "";
+    let modalProps = modal.properties;
+
+    //set up watcher for navigation
+    watchForPageChange();
+  });
 }

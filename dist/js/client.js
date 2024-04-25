@@ -120,13 +120,36 @@ function transpileToHTML(string) {
   });
   return [string.replace(/@(\w+):(\w+)\((\w+)\)=(\w+)/g, ""), events];
 }
+function waitForReactRenderOfElement(selector) {
+  const attemptLimit = 100;
+  return new Promise((resolve, reject) => {
+    let intervalsRun = 0;
+    function checkForElement() {
+      intervalsRun++;
+      if (intervalsRun === attemptLimit) {
+        reject(
+          new Error(
+            `waitForReactRenderOfElement: Could not find element with selector: "${selector}". Attempt limit reached (${attemptLimit} attempts)`
+          )
+        );
+      }
+      const element = document.querySelector(selector);
+      if (element) {
+        clearInterval(intervalId);
+        resolve(element);
+      }
+    }
+    const intervalId = setInterval(checkForElement, 50);
+  });
+}
 const modal = reactive({
   open: false,
   clickAction: "X",
-  modalTarget: document.querySelector("#modalTarget"),
+  modalTarget: null,
   properties: {},
   focusedElement: null,
   scripts: {},
+  created: false,
   currentPage: null,
   //Impressure only
   effects() {
@@ -152,7 +175,8 @@ const modal = reactive({
       currentPage: {
         pageChange: () => {
           console.log("page changed to: ", this.currentPage);
-          this.init();
+          modifyLinkTags();
+          this.create();
         }
       }
     };
@@ -325,16 +349,10 @@ const modal = reactive({
         }
       `;
   },
-  registerKeyEvents() {
-  },
-  handleVisibility() {
-    this.open = !this.open;
-  },
   createModal() {
     const modal2 = document.createElement("div");
     modal2.id = `in-app-modal`;
     modal2.className = "dialog";
-    this.registerKeyEvents();
     modal2.innerHTML = `<style>${this.styles}</style>
     <div class="inner">
         <div id="content-output">
@@ -343,9 +361,8 @@ const modal = reactive({
     return modal2;
   },
   createModalButton() {
-    const modalButtonAction = "handleVisibility";
     const transpiledButton = transpileToHTML(`  
-    <button id="closeModalTop" class="top-button" @click:id(closeModalTop)=${modalButtonAction}>${this.clickAction}</button> `);
+    <button id="closeModalTop" class="top-button">${this.clickAction}</button> `);
     this.events = transpiledButton[1];
     const buttonContainer = document.createElement("div");
     buttonContainer.className = "button-container";
@@ -372,12 +389,6 @@ const modal = reactive({
     this.modal.querySelector("#content-output").innerHTML = content;
     this.modal.setAttribute("data-modal-type", this.properties.type);
   },
-  preprocessModal() {
-    this.events.forEach((event) => {
-      document.querySelector(`${event.get("elementDomIdPrefix")}${event.get("elementDomIdValue")}`).addEventListener(event.get("eventType"), this[event.get("eventListenerCallback")].bind(this));
-    });
-    return this.modal;
-  },
   injectScript() {
     const scriptExists = document.querySelector(`script[src="${this.script}"]`);
     if (scriptExists) {
@@ -391,56 +402,16 @@ const modal = reactive({
     document.body.appendChild(injScript);
     this.scripts[this.properties.type] = injScript;
   },
-  watchForPageChange() {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === "childList") {
-          const pageElement = document.querySelector(".survey .page");
-          if (pageElement) {
-            this.waitForReactRenderOfElement("footer").then(() => {
-              this.currentPage = pageElement.id;
-            });
-          }
-        }
-      });
-    });
-    const surveyElement = document.querySelector(".survey");
-    observer.observe(surveyElement, { childList: true });
-  },
-  waitForReactRenderOfElement(selector) {
-    const attemptLimit = 100;
-    return new Promise((resolve, reject) => {
-      let intervalsRun = 0;
-      function checkForElement() {
-        intervalsRun++;
-        if (intervalsRun === attemptLimit) {
-          reject(
-            new Error(
-              `waitForReactRenderOfElement: Could not find element with selector: "${selector}". Attempt limit reached (${attemptLimit} attempts)`
-            )
-          );
-        }
-        const element = document.querySelector(selector);
-        if (element) {
-          clearInterval(intervalId);
-          resolve(element);
-        }
-      }
-      const intervalId = setInterval(checkForElement, 50);
-    });
-  },
-  init() {
+  create() {
     this.modal = this.createModal();
-    this.modalTarget.appendChild(this.createModalButton());
-    this.modalTarget.appendChild(this.preprocessModal());
-    this.currentPage = this.currentPage || "";
+    this.modalTarget.appendChild(this.modal);
+    const buttonCont = document.createElement("div");
+    buttonCont.innerHTML = `<button id="closeModalTop" class="top-button">${this.clickAction}</button> `;
+    buttonCont.className = "button-container";
+    this.modalTarget.prepend(buttonCont);
   }
 });
 const uaDetector = new UserAgentDetector(window.navigator.userAgent);
-if (uaDetector.detect("fb")) {
-  modifyLinkTags();
-  modal.watchForPageChange();
-}
 function modifyLinkTags() {
   const linkCategories = {
     privacy: { content: "privacy-policy", type: "terms-privacy" },
@@ -459,10 +430,15 @@ function modifyLinkTags() {
   };
   const handleLinkClick = (event) => {
     event.preventDefault();
-    modal.properties = modal.properties || {};
     const contentKey = event.target.dataset.modalCategory !== "partners" ? "content" : "vertical";
     const { [contentKey]: content, type } = linkCategories[event.target.dataset.modalCategory];
     modal.properties = { brand: modal.modalTarget.getAttribute("brand"), [contentKey]: content, type };
+    modal.open = !modal.open;
+    modal.modalTarget.querySelectorAll("button").forEach((button) => {
+      button.addEventListener("click", handleCloseButtonClick);
+    });
+  };
+  const handleCloseButtonClick = () => {
     modal.open = !modal.open;
   };
   [...document.querySelectorAll("a")].filter((anchor) => {
@@ -478,5 +454,33 @@ function modifyLinkTags() {
     return false;
   }).forEach((tag) => {
     tag.addEventListener("click", handleLinkClick);
+  });
+}
+const watchForPageChange = () => {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === "childList") {
+        const pageElement = document.querySelector(".survey .page");
+        if (pageElement) {
+          waitForReactRenderOfElement("#modalTarget").then((el) => {
+            modal.modalTarget = el;
+            modal.currentPage = pageElement.id;
+          });
+        }
+      }
+    });
+  });
+  const surveyElement = document.querySelector(".survey");
+  observer.observe(surveyElement, { childList: true });
+};
+if (uaDetector.detect("fb")) {
+  modifyLinkTags();
+  waitForReactRenderOfElement("#modalTarget").then((el) => {
+    modal.modalTarget;
+    modal.modalTarget = el;
+    modal.currentPage;
+    modal.currentPage = "";
+    modal.properties;
+    watchForPageChange();
   });
 }

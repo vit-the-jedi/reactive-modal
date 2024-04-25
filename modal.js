@@ -7,10 +7,11 @@ import { modifyLinkTags } from "./index.js";
 export const modal = reactive({
   open: false,
   clickAction: "X",
-  modalTarget: document.querySelector("#modalTarget"),
+  modalTarget: null,
   properties: {},
   focusedElement: null,
   scripts: {},
+  created: false,
   currentPage: null, //Impressure only
   effects() {
     return {
@@ -37,7 +38,8 @@ export const modal = reactive({
       currentPage: {
         pageChange: () => {
           console.log("page changed to: ", this.currentPage);
-          this.init();
+          modifyLinkTags();
+          this.create();
         },
       },
     };
@@ -210,16 +212,10 @@ export const modal = reactive({
         }
       `;
   },
-  registerKeyEvents() {},
-  handleVisibility() {
-    this.open = !this.open;
-  },
   createModal() {
     const modal = document.createElement("div");
     modal.id = `in-app-modal`;
     modal.className = "dialog";
-
-    this.registerKeyEvents();
 
     modal.innerHTML = `<style>${this.styles}</style>
     <div class="inner">
@@ -232,7 +228,7 @@ export const modal = reactive({
     //method we want the buttons to run when clicked, passed as string name
     const modalButtonAction = "handleVisibility";
     const transpiledButton = transpileToHTML(`  
-    <button id="closeModalTop" class="top-button" @click:id(closeModalTop)=${modalButtonAction}>${this.clickAction}</button> `);
+    <button id="closeModalTop" class="top-button">${this.clickAction}</button> `);
     this.events = transpiledButton[1];
     const buttonContainer = document.createElement("div");
     buttonContainer.className = "button-container";
@@ -259,15 +255,6 @@ export const modal = reactive({
     this.modal.querySelector("#content-output").innerHTML = content;
     this.modal.setAttribute("data-modal-type", this.properties.type);
   },
-  preprocessModal() {
-    //add event listeners to modal based on events we extracted from the transpiled html template
-    this.events.forEach((event) => {
-      document
-        .querySelector(`${event.get("elementDomIdPrefix")}${event.get("elementDomIdValue")}`)
-        .addEventListener(event.get("eventType"), this[event.get("eventListenerCallback")].bind(this));
-    });
-    return this.modal;
-  },
   injectScript() {
     //inject the proper script for the modal
     const scriptExists = document.querySelector(`script[src="${this.script}"]`);
@@ -282,54 +269,14 @@ export const modal = reactive({
     document.body.appendChild(injScript);
     this.scripts[this.properties.type] = injScript;
   },
-  watchForPageChange() {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === "childList") {
-          const pageElement = document.querySelector(".survey .page");
-          if (pageElement) {
-            this.waitForReactRenderOfElement("footer").then(() => {
-              this.currentPage = pageElement.id;
-            });
-          }
-        }
-      });
-    });
-    const surveyElement = document.querySelector(".survey");
-    observer.observe(surveyElement, { childList: true });
-  },
-  waitForReactRenderOfElement(selector) {
-    //polls the DOM either until the element is found or the time limit is reached before throwing an error.
-    //Alter the attempt limit value by multiplying your new attempt value * the interval ms value to get the desired amount of time to poll for.
-    const attemptLimit = 100;
-    return new Promise((resolve, reject) => {
-      let intervalsRun = 0;
-      function checkForElement() {
-        //increase intervalsRun every time the interval is called
-        intervalsRun++;
-        if (intervalsRun === attemptLimit) {
-          reject(
-            new Error(
-              `waitForReactRenderOfElement: Could not find element with selector: "${selector}". Attempt limit reached (${attemptLimit} attempts)`
-            )
-          );
-        }
-        const element = document.querySelector(selector);
-        //clear the interval and resolve the promise with the found element
-        if (element) {
-          clearInterval(intervalId);
-          resolve(element);
-        }
-      }
-      const intervalId = setInterval(checkForElement, 50);
-    });
-  },
-  init() {
-    //create the inital modal, which is hidden and has no content
+  create() {
+    //create the modal
     this.modal = this.createModal();
     //append the processed modal to the DOM target
-    this.modalTarget.appendChild(this.createModalButton());
-    this.modalTarget.appendChild(this.preprocessModal());
-    this.currentPage = this.currentPage || "";
+    this.modalTarget.appendChild(this.modal);
+    const buttonCont = document.createElement("div");
+    buttonCont.innerHTML = `<button id="closeModalTop" class="top-button">${this.clickAction}</button> `;
+    buttonCont.className = "button-container";
+    this.modalTarget.prepend(buttonCont);
   },
 });
