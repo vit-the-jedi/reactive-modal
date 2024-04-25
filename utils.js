@@ -27,7 +27,7 @@ export function transpileToHTML(string) {
   return [string.replace(/@(\w+):(\w+)\((\w+)\)=(\w+)/g, ""), events];
 }
 
-export function waitForReactRenderOfElement(selector) {
+export function waitForReactRenderOfElement(parent = document, selector) {
   //polls the DOM either until the element is found or the time limit is reached before throwing an error.
   //Alter the attempt limit value by multiplying your new attempt value * the interval ms value to get the desired amount of time to poll for.
   const attemptLimit = 100;
@@ -43,7 +43,7 @@ export function waitForReactRenderOfElement(selector) {
           )
         );
       }
-      const element = document.querySelector(selector);
+      const element = parent.querySelector(selector);
       //clear the interval and resolve the promise with the found element
       if (element) {
         clearInterval(intervalId);

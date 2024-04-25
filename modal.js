@@ -1,7 +1,7 @@
 "use strict";
 
 import { reactive } from "../lightweight-reactivity/src/index.js";
-import { transpileToHTML } from "./utils.js";
+import { transpileToHTML, waitForReactRenderOfElement } from "./utils.js";
 import { modifyLinkTags } from "./index.js";
 
 export const modal = reactive({
@@ -207,8 +207,6 @@ export const modal = reactive({
 
     modal.innerHTML = `<style>${this.styles}</style>
     <div class="inner">
-        <div id="content-output">
-        </div>
     </div>`;
     return modal;
   },
@@ -240,7 +238,10 @@ export const modal = reactive({
     <ul id="${this.properties.vertical}-list"></ul>`;
         break;
     }
-    this.modal.querySelector("#content-output").innerHTML = content;
+    const output = document.createElement("div");
+    output.id = "content-output";
+    output.innerHTML = content;
+    this.modal.querySelector(".inner").appendChild(output);
     this.modal.setAttribute("data-modal-type", this.properties.type);
   },
   injectScript() {
@@ -256,6 +257,11 @@ export const modal = reactive({
     injScript.setAttribute("brand", this.properties.brand);
     document.body.appendChild(injScript);
     this.scripts[this.properties.type] = injScript;
+    waitForReactRenderOfElement(this.modal, "#content-output").then((el) => {
+      setTimeout(() => {
+        modifyLinkTags(el);
+      }, 6000);
+    });
   },
   create() {
     //create the modal

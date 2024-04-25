@@ -120,7 +120,7 @@ function transpileToHTML(string) {
   });
   return [string.replace(/@(\w+):(\w+)\((\w+)\)=(\w+)/g, ""), events];
 }
-function waitForReactRenderOfElement(selector) {
+function waitForReactRenderOfElement(parent = document, selector) {
   const attemptLimit = 100;
   return new Promise((resolve, reject) => {
     let intervalsRun = 0;
@@ -133,7 +133,7 @@ function waitForReactRenderOfElement(selector) {
           )
         );
       }
-      const element = document.querySelector(selector);
+      const element = parent.querySelector(selector);
       if (element) {
         clearInterval(intervalId);
         resolve(element);
@@ -343,8 +343,6 @@ const modal = reactive({
     modal2.className = "dialog";
     modal2.innerHTML = `<style>${this.styles}</style>
     <div class="inner">
-        <div id="content-output">
-        </div>
     </div>`;
     return modal2;
   },
@@ -374,7 +372,10 @@ const modal = reactive({
     <ul id="${this.properties.vertical}-list"></ul>`;
         break;
     }
-    this.modal.querySelector("#content-output").innerHTML = content;
+    const output = document.createElement("div");
+    output.id = "content-output";
+    output.innerHTML = content;
+    this.modal.querySelector(".inner").appendChild(output);
     this.modal.setAttribute("data-modal-type", this.properties.type);
   },
   injectScript() {
@@ -389,6 +390,11 @@ const modal = reactive({
     injScript.setAttribute("brand", this.properties.brand);
     document.body.appendChild(injScript);
     this.scripts[this.properties.type] = injScript;
+    waitForReactRenderOfElement(this.modal, "#content-output").then((el) => {
+      setTimeout(() => {
+        modifyLinkTags(el);
+      }, 6e3);
+    });
   },
   create() {
     this.modal = this.createModal();
@@ -400,7 +406,7 @@ const modal = reactive({
   }
 });
 const uaDetector = new UserAgentDetector(window.navigator.userAgent);
-function modifyLinkTags() {
+function modifyLinkTags(parent = document) {
   const linkCategories = {
     privacy: { content: "privacy-policy", type: "terms-privacy" },
     terms: { content: "terms", type: "terms-privacy" },
@@ -426,22 +432,37 @@ function modifyLinkTags() {
       button.addEventListener("click", handleCloseButtonClick);
     });
   };
+  const handleInModalLinkClick = (event) => {
+    event.preventDefault();
+    modal.open = false;
+    const contentKey = event.target.dataset.modalCategory !== "partners" ? "content" : "vertical";
+    const { [contentKey]: content, type } = linkCategories[event.target.dataset.modalCategory];
+    modal.properties = { brand: modal.modalTarget.getAttribute("brand"), [contentKey]: content, type };
+    modal.open = !modal.open;
+    modal.modal.scrollTo(0, 0);
+  };
   const handleCloseButtonClick = () => {
     modal.open = !modal.open;
   };
-  [...document.querySelectorAll("a")].filter((anchor) => {
+  [...parent.querySelectorAll("a")].filter((anchor) => {
     if (anchor.href.includes("javascript")) {
       return false;
     }
     const category = getCategory(anchor.href);
     if (category) {
+      if (parent.id === "content-output")
+        anchor.dataset.isInModal = true;
       anchor.dataset.modalCategory = category;
       anchor.href = "javascript:void(0)";
       return true;
     }
     return false;
   }).forEach((tag) => {
-    tag.addEventListener("click", handleLinkClick);
+    if (tag.dataset.isInModal) {
+      tag.addEventListener("click", handleInModalLinkClick);
+    } else {
+      tag.addEventListener("click", handleLinkClick);
+    }
   });
 }
 const watchForPageChange = () => {
@@ -450,7 +471,7 @@ const watchForPageChange = () => {
       if (mutation.type === "childList") {
         const pageElement = document.querySelector(".survey .page");
         if (pageElement) {
-          waitForReactRenderOfElement("#modalTarget").then((el) => {
+          waitForReactRenderOfElement(document, "#modalTarget").then((el) => {
             modal.modalTarget = el;
             modal.currentPage = pageElement.id;
           });
@@ -462,7 +483,7 @@ const watchForPageChange = () => {
   observer.observe(surveyElement, { childList: true });
 };
 if (uaDetector.detect("fb")) {
-  waitForReactRenderOfElement("#modalTarget").then((el) => {
+  waitForReactRenderOfElement(document, "#modalTarget").then((el) => {
     modal.modalTarget;
     modal.modalTarget = el;
     modal.currentPage;

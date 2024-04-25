@@ -7,7 +7,7 @@ import { waitForReactRenderOfElement } from "./utils.js";
 
 const uaDetector = new UserAgentDetector(window.navigator.userAgent);
 
-export function modifyLinkTags() {
+export function modifyLinkTags(parent = document) {
   const linkCategories = {
     privacy: { content: "privacy-policy", type: "terms-privacy" },
     terms: { content: "terms", type: "terms-privacy" },
@@ -36,18 +36,31 @@ export function modifyLinkTags() {
       button.addEventListener("click", handleCloseButtonClick);
     });
   };
+  const handleInModalLinkClick = (event) => {
+    event.preventDefault();
+    modal.open = false;
+    //must invoke the reactive modal's getter on each property we want to be reactive
+    //otherwise our reactive function won't track changes
+    const contentKey = event.target.dataset.modalCategory !== "partners" ? "content" : "vertical";
+    const { [contentKey]: content, type } = linkCategories[event.target.dataset.modalCategory];
+    modal.properties = { brand: modal.modalTarget.getAttribute("brand"), [contentKey]: content, type: type };
+    modal.open = !modal.open;
+    modal.modal.scrollTo(0, 0);
+  };
+
   const handleCloseButtonClick = () => {
     modal.open = !modal.open;
   };
   //go through all links on page and transform the ones we need to
   //only target links that are redirecting to privacy, terms, or partners
-  [...document.querySelectorAll("a")]
+  [...parent.querySelectorAll("a")]
     .filter((anchor) => {
       if (anchor.href.includes("javascript")) {
         return false;
       }
       const category = getCategory(anchor.href);
       if (category) {
+        if (parent.id === "content-output") anchor.dataset.isInModal = true;
         anchor.dataset.modalCategory = category;
         anchor.href = "javascript:void(0)";
         return true;
@@ -55,7 +68,11 @@ export function modifyLinkTags() {
       return false;
     })
     .forEach((tag) => {
-      tag.addEventListener("click", handleLinkClick);
+      if (tag.dataset.isInModal) {
+        tag.addEventListener("click", handleInModalLinkClick);
+      } else {
+        tag.addEventListener("click", handleLinkClick);
+      }
     });
 }
 
@@ -66,7 +83,7 @@ const watchForPageChange = () => {
       if (mutation.type === "childList") {
         const pageElement = document.querySelector(".survey .page");
         if (pageElement) {
-          waitForReactRenderOfElement("#modalTarget").then((el) => {
+          waitForReactRenderOfElement(document, "#modalTarget").then((el) => {
             modal.modalTarget = el;
             modal.currentPage = pageElement.id;
           });
@@ -80,7 +97,7 @@ const watchForPageChange = () => {
 
 if (uaDetector.detect("fb")) {
   //initialize all reactive props here
-  waitForReactRenderOfElement("#modalTarget").then((el) => {
+  waitForReactRenderOfElement(document, "#modalTarget").then((el) => {
     let modalTarget = modal.modalTarget;
     modal.modalTarget = el;
     let currentPage = modal.currentPage;
