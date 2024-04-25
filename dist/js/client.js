@@ -167,14 +167,12 @@ const modal = reactive({
       },
       properties: {
         updateContent: () => {
-          console.log(this.properties);
           this.createModalContent();
           this.injectScript();
         }
       },
       currentPage: {
         pageChange: () => {
-          console.log("page changed to: ", this.currentPage);
           modifyLinkTags();
           this.create();
         }
@@ -245,7 +243,6 @@ const modal = reactive({
           opacity: 0;
           min-height: 85vh;
           height: 0;
-          font-family: var(--mainFont);
           text-align: left;
           position: relative;
           box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
@@ -279,7 +276,6 @@ const modal = reactive({
           position: absolute;
           display: none;
           text-align: center;
-
         }
         .button-container button {
           border: none;
@@ -336,17 +332,6 @@ const modal = reactive({
             height: 45px;
             top: calc(15vh / 2);
           }
-          .dialog #content-output h1 {
-            font-size: 2.5em !important;
-            margin: 15px auto;
-          }
-          .dialog #content-output h2 {
-            font-size: 1.8em !important;
-          }
-          .dialog #content-output h3 {
-            font-size: 1.35em !important;
-          }
-        }
       `;
   },
   createModal() {
@@ -416,7 +401,7 @@ function modifyLinkTags() {
   const linkCategories = {
     privacy: { content: "privacy-policy", type: "terms-privacy" },
     terms: { content: "terms", type: "terms-privacy" },
-    partners: { vertical: "medicare-oo", type: "partners" },
+    partners: { vertical: modal.modalTarget.getAttribute("vertical"), type: "partners" },
     notice: { content: "privacy-notice", type: "terms-privacy" }
   };
   const getCategory = (href) => {
