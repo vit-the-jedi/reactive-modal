@@ -6,7 +6,7 @@ import { modifyLinkTags } from "./index.js";
 
 export const modal = reactive({
   open: false,
-  clickAction: "X",
+  clickAction: "&times",
   modalTarget: null,
   properties: {},
   focusedElement: null,
@@ -108,7 +108,8 @@ export const modal = reactive({
           opacity: 0;
           min-height: 85vh;
           height: 0;
-          font-family: Arial, sans-serif;
+          font-family: var(--mainFont);
+          text-align: left;
           position: relative;
           box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
           border-radius: 5px;
@@ -149,8 +150,7 @@ export const modal = reactive({
           position: relative;
           width: 100%;
           height: 100%;
-          font-weight: bold;
-          font-size: 1.25em;
+          font-size: 1.75em;
           cursor: pointer;
         }
         .modal-button {
