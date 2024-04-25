@@ -11,7 +11,7 @@ export function modifyLinkTags() {
   const linkCategories = {
     privacy: { content: "privacy-policy", type: "terms-privacy" },
     terms: { content: "terms", type: "terms-privacy" },
-    partners: { vertical: "medicare-oo", type: "partners" },
+    partners: { vertical: modal.modalTarget.getAttribute("vertical"), type: "partners" },
     notice: { content: "privacy-notice", type: "terms-privacy" },
   };
   // Function to determine the category of a link based on its href
