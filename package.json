@@ -6,8 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "vite serve",
-    "build": "vite build",
-    "preview": "vite serve dist/"
+    "build": "vite build && npm run override",
+    "preview": "vite serve dist/",
+    "override": "node /Users/Matt/cli-tools/override-cli/bin/index.js './dist/js/client.js' 'vit-the-jedi.github.io/reactive-modal/dist/js/client.js'"
   },
   "author": "",
   "license": "ISC",

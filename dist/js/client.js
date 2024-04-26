@@ -361,21 +361,27 @@ const modal = reactive({
       case "terms-privacy":
       default:
         this.script = `https://distro.quick-cdn.com/build/compliance/legal-page-injector.js`;
+        this.scriptTarget = "#data-output";
         content = `
     <h1 legal-element="title"></h1>
     <main id="data-output" legal-element="content"></main>`;
         break;
       case "partners":
         this.script = `https://leads.digitalmediasolutions.com/js/partners.js?vertical=${this.properties.vertical}`;
+        this.scriptTarget = "#partners-list";
         content = `
     <h1>Marketing Partners:</h1>
     <ul id="${this.properties.vertical}-list"></ul>`;
         break;
     }
-    const output = document.createElement("div");
-    output.id = "content-output";
+    let output = this.modal.querySelector("#content-output");
+    if (!output) {
+      output = document.createElement("div");
+      output.id = "content-output";
+      output.innerHTML = content;
+      this.modal.querySelector(".inner").appendChild(output);
+    }
     output.innerHTML = content;
-    this.modal.querySelector(".inner").appendChild(output);
     this.modal.setAttribute("data-modal-type", this.properties.type);
   },
   injectScript() {
@@ -391,9 +397,23 @@ const modal = reactive({
     document.body.appendChild(injScript);
     this.scripts[this.properties.type] = injScript;
     waitForReactRenderOfElement(this.modal, "#content-output").then((el) => {
-      setTimeout(() => {
-        modifyLinkTags(el);
-      }, 6e3);
+      this.checkForModalContent(el.querySelector(this.scriptTarget)).then((contentExists) => {
+        if (contentExists)
+          modifyLinkTags(el);
+      });
+    });
+  },
+  checkForModalContent(target) {
+    return new Promise((resolve) => {
+      const observer = new MutationObserver((mutationsList) => {
+        for (const mutation of mutationsList) {
+          if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+            observer.disconnect();
+            resolve(true);
+          }
+        }
+      });
+      observer.observe(target, { childList: true });
     });
   },
   create() {
@@ -414,7 +434,7 @@ function modifyLinkTags(parent = document) {
     notice: { content: "privacy-notice", type: "terms-privacy" }
   };
   const getCategory = (href) => {
-    const blacklistedLinkParts = ["notice", "privacy", "terms", "partners"];
+    const blacklistedLinkParts = ["notice", "privacy", "terms", "partners", "priv"];
     for (const part of blacklistedLinkParts) {
       if (href.includes(part)) {
         return part;
@@ -448,8 +468,10 @@ function modifyLinkTags(parent = document) {
     if (anchor.href.includes("javascript")) {
       return false;
     }
-    const category = getCategory(anchor.href);
+    let category = getCategory(anchor.href);
     if (category) {
+      if (category === "priv")
+        category = "privacy";
       if (parent.id === "content-output")
         anchor.dataset.isInModal = true;
       anchor.dataset.modalCategory = category;

@@ -16,7 +16,7 @@ export function modifyLinkTags(parent = document) {
   };
   // Function to determine the category of a link based on its href
   const getCategory = (href) => {
-    const blacklistedLinkParts = ["notice", "privacy", "terms", "partners"];
+    const blacklistedLinkParts = ["notice", "privacy", "terms", "partners", "priv"];
     for (const part of blacklistedLinkParts) {
       if (href.includes(part)) {
         return part;
@@ -58,8 +58,9 @@ export function modifyLinkTags(parent = document) {
       if (anchor.href.includes("javascript")) {
         return false;
       }
-      const category = getCategory(anchor.href);
+      let category = getCategory(anchor.href);
       if (category) {
+        if (category === "priv") category = "privacy";
         if (parent.id === "content-output") anchor.dataset.isInModal = true;
         anchor.dataset.modalCategory = category;
         anchor.href = "javascript:void(0)";
