@@ -465,7 +465,7 @@ function modifyLinkTags(parent = document) {
     modal.open = !modal.open;
   };
   [...parent.querySelectorAll("a")].filter((anchor) => {
-    if (anchor.href.includes("javascript")) {
+    if (anchor.href.includes("javascript") || anchor.href.includes("#")) {
       return false;
     }
     let category = getCategory(anchor.href);
