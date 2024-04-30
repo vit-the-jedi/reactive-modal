@@ -433,10 +433,14 @@ function modifyLinkTags(parent = document) {
     partners: { vertical: modal.modalTarget.getAttribute("vertical"), type: "partners" },
     notice: { content: "privacy-notice", type: "terms-privacy" }
   };
-  const getCategory = (href) => {
+  const getCategory = (url) => {
+    console.log(url);
+    const hostName = new URL(window.location.href);
     const blacklistedLinkParts = ["notice", "privacy", "terms", "partners", "priv"];
+    if (!url.hostname.includes(hostName.hostname))
+      return null;
     for (const part of blacklistedLinkParts) {
-      if (href.includes(part)) {
+      if (url.pathname.includes(part)) {
         return part;
       }
     }
@@ -468,7 +472,7 @@ function modifyLinkTags(parent = document) {
     if (anchor.href.includes("javascript") || anchor.href.includes("#")) {
       return false;
     }
-    let category = getCategory(anchor.href);
+    let category = getCategory(new URL(anchor.href));
     if (category) {
       if (category === "priv")
         category = "privacy";
