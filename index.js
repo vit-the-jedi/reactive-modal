@@ -1,6 +1,5 @@
 "use strict";
 
-//import { modal } from "./modal.js";
 import { UserAgentDetector } from "./isInApp/detect.js";
 import { modal } from "./modal.js";
 import { waitForReactRenderOfElement } from "./utils.js";
@@ -56,6 +55,7 @@ export function modifyLinkTags(parent = document) {
     modal.modalTarget.querySelectorAll("button").forEach((button) => {
       button.addEventListener("click", handleCloseButtonClick);
     });
+    //modal.modalTarget.addEventListener("click", handleCloseButtonClick);
   };
   const handleInModalLinkClick = (event) => {
     event.preventDefault();

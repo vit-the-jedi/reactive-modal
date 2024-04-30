@@ -148,6 +148,8 @@ export const modal = reactive({
           height: 100%;
           font-size: 1.75em;
           cursor: pointer;
+          padding: 0em;
+          color: #000;
         }
         .modal-button {
           border: none;
@@ -196,7 +198,7 @@ export const modal = reactive({
             left: calc(50% - 30px);
             width: 45px;
             height: 45px;
-            top: calc(15vh / 2);
+            top: calc((15vh / 2) - 22.5px);
           }
       `;
   },

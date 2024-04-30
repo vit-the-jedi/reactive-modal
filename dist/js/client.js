@@ -285,6 +285,8 @@ const modal = reactive({
           height: 100%;
           font-size: 1.75em;
           cursor: pointer;
+          padding: 0em;
+          color: #000;
         }
         .modal-button {
           border: none;
@@ -333,7 +335,7 @@ const modal = reactive({
             left: calc(50% - 30px);
             width: 45px;
             height: 45px;
-            top: calc(15vh / 2);
+            top: calc((15vh / 2) - 22.5px);
           }
       `;
   },
@@ -440,7 +442,6 @@ function modifyLinkTags(parent = document) {
     const linkDomain = returnDomainWithoutSubDomain(domainSplit);
     const hostUrl = new URL(window.location.href);
     const hostDomain = hostUrl.hostname.includes("impressure") ? returnDomainWithoutSubDomain(hostUrl.pathname.replace("/embed/", "").split(".")) : hostDomain.hostname;
-    console.log("host: ", hostDomain, " link: ", linkDomain);
     const blacklistedLinkParts = ["notice", "privacy", "terms", "partners", "priv"];
     if (linkDomain !== hostDomain)
       return null;
