@@ -16,16 +16,34 @@ export function modifyLinkTags(parent = document) {
   };
   // Function to determine the category of a link based on its href
   const getCategory = (url) => {
-    console.log(url);
-    const hostName = new URL(window.location.href);
+    //skip empty hostnames
+    if (url.hostname.length === 0) return null;
+    const domainSplit = url.hostname.split(".");
+    const linkDomain = returnDomainWithoutSubDomain(domainSplit);
+    const hostUrl = new URL(window.location.href);
+    //check if we're in impressure or impressure preview
+    const hostDomain = hostUrl.hostname.includes("impressure")
+      ? returnDomainWithoutSubDomain(hostUrl.pathname.replace("/embed/", "").split("."))
+      : hostDomain.hostname;
     const blacklistedLinkParts = ["notice", "privacy", "terms", "partners", "priv"];
-    if (!url.hostname.includes(hostName.hostname)) return null;
+    //if hostnames don't match, leave them alone
+    if (linkDomain !== hostDomain) return null;
     for (const part of blacklistedLinkParts) {
+      //return the part of the URL that matches an entry in blacklisted parts
       if (url.pathname.includes(part)) {
         return part;
       }
     }
     return null;
+  };
+  /**
+   *
+   * @param {Array} domainPartsArray
+   * @description Function to return the domain without the subdomain or TLD
+   * @returns string of domain without subdomain or TLD
+   */
+  const returnDomainWithoutSubDomain = (domainPartsArray) => {
+    return domainPartsArray.length > 2 ? domainPartsArray.slice(1).join(".") : domainPartsArray.join(".");
   };
   const handleLinkClick = (event) => {
     event.preventDefault();

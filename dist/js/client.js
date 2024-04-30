@@ -434,10 +434,15 @@ function modifyLinkTags(parent = document) {
     notice: { content: "privacy-notice", type: "terms-privacy" }
   };
   const getCategory = (url) => {
-    console.log(url);
-    const hostName = new URL(window.location.href);
+    if (url.hostname.length === 0)
+      return null;
+    const domainSplit = url.hostname.split(".");
+    const linkDomain = returnDomainWithoutSubDomain(domainSplit);
+    const hostUrl = new URL(window.location.href);
+    const hostDomain = hostUrl.hostname.includes("impressure") ? returnDomainWithoutSubDomain(hostUrl.pathname.replace("/embed/", "").split(".")) : hostDomain.hostname;
+    console.log("host: ", hostDomain, " link: ", linkDomain);
     const blacklistedLinkParts = ["notice", "privacy", "terms", "partners", "priv"];
-    if (!url.hostname.includes(hostName.hostname))
+    if (linkDomain !== hostDomain)
       return null;
     for (const part of blacklistedLinkParts) {
       if (url.pathname.includes(part)) {
@@ -445,6 +450,9 @@ function modifyLinkTags(parent = document) {
       }
     }
     return null;
+  };
+  const returnDomainWithoutSubDomain = (domainPartsArray) => {
+    return domainPartsArray.length > 2 ? domainPartsArray.slice(1).join(".") : domainPartsArray.join(".");
   };
   const handleLinkClick = (event) => {
     event.preventDefault();
